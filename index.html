@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Login Page</title>
+    <style>
+        body {
+            background: url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            width: 300px;
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+        }
+
+        .login-container h2 {
+            margin-bottom: 20px;
+        }
+
+        .input-box {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .login-btn {
+            background: #ff4b5c;
+            color: white;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .login-btn:hover {
+            background: #ff3a4a;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+        }
+
+        .signup-link {
+            margin-top: 15px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .signup-link a {
+            color: #ff4b5c;
+            text-decoration: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding-top: 100px;
+            text-align: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            font-size: 24px;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .modal-body {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <h2>LOG IN</h2>
+    <input type="text" id="username" class="input-box" placeholder="Username">
+    <input type="password" id="password" class="input-box" placeholder="Password">
+    <p id="error-msg" class="error"></p>
+    <button class="login-btn" onclick="checkLogin()">Log in</button>
+    <div class="signup-link">
+        Don't have an account? <a href="signup.html">Sign Up</a>
+    </div>
+</div>
+
+<!-- Welcome Modal -->
+<div id="welcomeModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <div class="modal-header">Welcome!</div>
+        <div class="modal-body">
+            <p>Welcome to your Financial World, you are successfully logged in!</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function checkLogin() {
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const errorMsg = document.getElementById("error-msg");
+
+        const users = JSON.parse(localStorage.getItem("users")) || {};
+
+        if (
+            (username === "abcde" && password === "12345") ||
+            (username === "Saif" && password === "1298") ||
+            (username === "praveen" && password === "le12") ||
+            (username === "siddartha" && password === "1272") ||
+            (users[username] && users[username] === password)
+        ) {
+            errorMsg.textContent = "";
+            showWelcomeModal();
+            setTimeout(() => {
+                window.location.href = "dashboard.html";
+            }, 2000);
+        } else {
+            errorMsg.textContent = "Invalid Username or Password";
+        }
+    }
+
+    function showWelcomeModal() {
+        document.getElementById("welcomeModal").style.display = "block";
+    }
+
+    function closeModal() {
+        document.getElementById("welcomeModal").style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        if (event.target === document.getElementById("welcomeModal")) {
+            closeModal();
+        }
+    }
+</script>
+
+</body>
+</html>

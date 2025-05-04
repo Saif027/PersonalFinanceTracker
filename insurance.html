@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Insurance Suggestions</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: url('insurance.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.9); /* translucent white */
+      padding: 20px;
+      border-radius: 10px;
+      width: 80%;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2, h3, h4 {
+      text-align: center;
+    }
+    .question {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background: #36A2EB;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2382c7;
+    }
+  </style>
+  
+</head>
+<body>
+  <div class="container">
+    <h2>Insurance Suggestions</h2>
+
+    <div class="question" id="step1">
+      <label>Enter Your Monthly Expenditure (in ₹):</label>
+      <input type="number" id="expenditure" />
+      <button onclick="nextStep1()">Next</button>
+    </div>
+
+    <div class="question" id="step2" style="display:none;">
+      <label>Do you live in a rental or own house?</label>
+      <select id="houseStatus" onchange="nextStep2()">
+        <option value="">-- Select --</option>
+        <option value="rental">Rental</option>
+        <option value="own">Own</option>
+      </select>
+    </div>
+
+    <div class="question" id="step3a" style="display:none;">
+      <label>Type of owned house:</label>
+      <select id="houseType" onchange="nextStep3()">
+        <option value="">-- Select --</option>
+        <option value="apartment">Apartment</option>
+        <option value="individual">Individual</option>
+      </select>
+    </div>
+
+    <div class="question" id="step3" style="display:none;">
+      <label>How many family members?</label>
+      <input type="number" id="familyMembers" min="1" onchange="nextStep4()" />
+    </div>
+
+    <div class="question" id="step4" style="display:none;">
+      <label>How many children in the family?</label>
+      <input type="number" id="childrenCount" min="0" onchange="nextStep5()" />
+    </div>
+
+    <div class="question" id="step5" style="display:none;">
+      <label>Do you own a vehicle?</label>
+      <select id="ownVehicle" onchange="nextStep6()">
+        <option value="">-- Select --</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+    <div class="question" id="vehicleTypeDiv" style="display:none;">
+      <label>Type of Vehicle:</label>
+      <select id="vehicleType" onchange="nextStep7()">
+        <option value="">-- Select --</option>
+        <option value="2w">Two-wheeler</option>
+        <option value="4w">Four-wheeler</option>
+        <option value="other">Others</option>
+      </select>
+    </div>
+
+    <div class="question" id="fourWheelerDetails" style="display:none;">
+      <label>Select Car Type:</label>
+      <select id="carType">
+        <option value="Mini">Mini</option>
+        <option value="Sedan">Sedan</option>
+        <option value="Compact SUV">Compact SUV</option>
+        <option value="SUV">SUV</option>
+        <option value="MUV">MUV</option>
+        <option value="Van">Van</option>
+        <option value="Others">Others</option>
+      </select>
+      <label>Monthly Vehicle Maintenance Cost (in ₹):</label>
+      <input type="number" id="maintenanceCost" />
+      <button onclick="nextStep8()">Next</button>
+    </div>
+
+    <div class="question" id="step6" style="display:none;">
+      <label>Age of Family Head:</label>
+      <input type="number" id="headAge" onchange="nextStep9()" />
+    </div>
+
+    <div class="question" id="step7" style="display:none;">
+      <label>Age of Second Family Head:</label>
+      <input type="number" id="secondAge" onchange="finalSuggestion()" />
+    </div>
+
+    <div class="question" id="result" style="display:none;"></div>
+  </div>
+
+<script>
+function nextStep1() {
+  const exp = parseFloat(document.getElementById('expenditure').value);
+  if (isNaN(exp) || exp <= 0) {
+    alert("Please enter valid expenditure.");
+    return;
+  }
+  document.getElementById("step2").style.display = "block";
+}
+
+function nextStep2() {
+  const status = document.getElementById('houseStatus').value;
+  if (status === "own") {
+    document.getElementById("step3a").style.display = "block";
+  }
+  document.getElementById("step3").style.display = "block";
+}
+
+function nextStep3() {
+  document.getElementById("step3").style.display = "block";
+}
+
+function nextStep4() {
+  document.getElementById("step4").style.display = "block";
+}
+
+function nextStep5() {
+  document.getElementById("step5").style.display = "block";
+}
+
+function nextStep6() {
+  const vehicle = document.getElementById('ownVehicle').value;
+  if (vehicle === "yes") {
+    document.getElementById("vehicleTypeDiv").style.display = "block";
+  } else {
+    document.getElementById("step6").style.display = "block";
+  }
+}
+
+function nextStep7() {
+  const type = document.getElementById('vehicleType').value;
+  if (type === "4w") {
+    document.getElementById("fourWheelerDetails").style.display = "block";
+  } else {
+    document.getElementById("step6").style.display = "block";
+  }
+}
+
+function nextStep8() {
+  document.getElementById("step6").style.display = "block";
+}
+
+function nextStep9() {
+  const age = parseInt(document.getElementById('headAge').value);
+  if (age > 50) {
+    document.getElementById("step7").style.display = "block";
+  } else {
+    finalSuggestion();
+  }
+}
+
+function finalSuggestion() {
+  const expenditure = parseFloat(document.getElementById('expenditure').value);
+  const familyMembers = parseInt(document.getElementById('familyMembers').value);
+  const children = parseInt(document.getElementById('childrenCount').value);
+  const headAge = parseInt(document.getElementById('headAge').value);
+  const secondAge = document.getElementById('secondAge')?.value;
+  const ownVehicle = document.getElementById('ownVehicle').value;
+  const vehicleType = document.getElementById('vehicleType').value;
+  const maintenanceCost = parseFloat(document.getElementById('maintenanceCost')?.value || 0);
+  const houseStatus = document.getElementById('houseStatus').value;
+
+  let result = `<h3>Final Recommendations:</h3><ul>`;
+
+  if (houseStatus === "rental") {
+    result += `<li>Consider saving plans to buy a home in the future.</li>`;
+  }
+
+  let insuranceAmount = familyMembers * 500000 + (children * 200000);
+  let coverageYears = 60 - headAge;
+  if (headAge > 50 && secondAge) coverageYears = 60 - parseInt(secondAge);
+
+  result += `<li><strong>Family Health Insurance:</strong> Recommended coverage of ₹${insuranceAmount.toLocaleString()} for ${coverageYears} years.</li>`;
+  result += `<li><strong>Suggested Insurers:</strong> Star Health, Niva Bupa, HDFC ERGO</li>`;
+
+  if (ownVehicle === "yes" && vehicleType === "4w") {
+    const maintenancePercent = (maintenanceCost / expenditure) * 100;
+    if (maintenancePercent > 15) {
+      result += `<li><strong>Car Insurance:</strong> Recommended due to high maintenance cost. Consider these companies:</li>
+        <ul>
+          <li>Acko General Insurance</li>
+          <li>HDFC ERGO Car Insurance</li>
+          <li>Tata AIG Car Insurance</li>
+          <li>ICICI Lombard Car Insurance</li>
+          <li>Bajaj Allianz Car Insurance</li>
+          <li>Reliance General Insurance</li>
+          <li>Digit Car Insurance (Go Digit)</li>
+          <li>New India Assurance</li>
+          <li>Oriental Insurance</li>
+          <li>United India Insurance</li>
+        </ul>
+        <h4>Available on these apps:</h4>
+        <ul>
+          <li>Policybazaar</li>
+          <li>Coverfox</li>
+          <li>RenewBuy</li>
+          <li>InsuranceDekho</li>
+          <li>Turtlemint</li>
+        </ul>`;
+    } else {
+      result += `<li><strong>Car Insurance:</strong> Not required currently due to low maintenance cost.</li>`;
+    }
+  }
+
+  result += `</ul><br/><button onclick="goToDashboard()">Back to Dashboard</button>`;
+
+  document.getElementById("result").innerHTML = result;
+  document.getElementById("result").style.display = "block";
+}
+
+function goToDashboard() {
+  window.location.href = "dashboard.html"; // Change if your dashboard file has a different name
+}
+</script>
+</body>
+</html>

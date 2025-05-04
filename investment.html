@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Investment Suggestions</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: url('investment.jpg') no-repeat center center fixed;
+        background-size: cover;
+        color: black;
+    }
+    .container {
+      width: 80%;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+    }
+    .text-section {
+      margin: 20px 0;
+    }
+    label, p {
+      font-size: 18px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #36A2EB;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #48A9E6;
+    }
+    canvas {
+      margin-top: 20px;
+    }
+    select {
+      padding: 8px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Investment Suggestions</h2>
+
+    <div class="text-section">
+      <p><strong>What is Investment?</strong><br>
+        Investment involves allocating money to various financial products with the expectation of generating a return over time. Examples include Fixed Deposits (FD), Mutual Funds, and Stocks.
+      </p>
+      <p><strong>Types of Investment:</strong><br>
+        FD offers low risk but lower returns. Mutual Funds and Stocks offer higher returns with more risk.
+      </p>
+    </div>
+
+    <div class="text-section">
+      <label for="investment-amount">Enter Investment Amount:</label>
+      <input type="number" id="investment-amount" placeholder="Enter investment amount" />
+      <button onclick="calculateInvestmentReturn()">Calculate Return</button>
+    </div>
+
+    <div id="investment-return-section" class="text-section"></div>
+
+    <!-- Dropdown will be inserted here by JavaScript -->
+    <div id="stockDropdownSection" class="text-section"></div>
+
+    <div id="stock-suggestion" class="text-section"></div>
+
+    <canvas id="stockChart" width="600" height="300"></canvas>
+
+    <div id="etf-suggestion" class="text-section"></div>
+
+    <div id="crypto-prices" class="text-section"></div>
+
+    <button onclick="goBackToDashboard()">Back to Dashboard</button>
+  </div>
+
+  <script>
+    const API_KEY = 'fc6e730c04674f5fbd777ec7d9d4c2f9'; // <-- Use your actual API key in quotes
+    const stocksBySector = {
+      Tech: ['AAPL', 'MSFT'],
+      Pharma: ['PFE', 'JNJ'],
+      Finance: ['JPM', 'BAC']
+    };
+    const cryptoList = ['BTC/USD', 'ETH/USD'];
+
+    window.onload = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const savings = parseFloat(urlParams.get('savings'));
+      if (savings && savings > 0) {
+        document.getElementById("investment-amount").value = savings;
+        calculateInvestmentReturn();
+      }
+      getStockSuggestionsBySector();
+      getETFSuggestion();
+      populateStockDropdown();
+      getCryptoPrices();
+      loadStockChart('AAPL'); // Default
+    };
+
+    function calculateInvestmentReturn() {
+      let amount = parseFloat(document.getElementById("investment-amount").value) || 0;
+      let fdRate = 0.07, mfRate = 0.12, years = 5;
+      let fdReturn = amount * Math.pow(1 + fdRate, years);
+      let mfReturn = amount * Math.pow(1 + mfRate, years);
+      document.getElementById("investment-return-section").innerHTML = `
+        <p><strong>Investment Calculation:</strong></p>
+        <p>Fixed Deposit Return (5 years @ 7%): ₹${fdReturn.toFixed(2)}</p>
+        <p>Mutual Fund Return (5 years @ 12%): ₹${mfReturn.toFixed(2)}</p>
+      `;
+    }
+
+    function getStockSuggestionsBySector() {
+      const sectorHTML = [];
+      for (const [sector, tickers] of Object.entries(stocksBySector)) {
+        const promises = tickers.map(ticker =>
+          fetch(`https://api.twelvedata.com/price?symbol=${ticker}&apikey=${API_KEY}`)
+            .then(res => res.json())
+            .then(data => data.price ? `<li>${ticker}: $${data.price}</li>` : `<li>${ticker}: Data unavailable</li>`)
+            .catch(() => `<li>${ticker}: Error</li>`)
+        );
+        Promise.all(promises).then(results => {
+          sectorHTML.push(`
+            <div>
+              <h4>${sector} Sector</h4>
+              <ul>${results.join('')}</ul>
+            </div>
+          `);
+          document.getElementById("stock-suggestion").innerHTML = sectorHTML.join('');
+        });
+      }
+    }
+
+    function getETFSuggestion() {
+      document.getElementById("etf-suggestion").innerHTML = `
+        <p><strong>ETF Suggestion:</strong></p>
+        <p>VOO (Vanguard S&P 500 ETF)</p>
+        <p>Note: ETF data is limited in free API tier.</p>
+      `;
+    }
+
+    function populateStockDropdown() {
+      const allStocks = Object.values(stocksBySector).flat();
+      const dropdown = document.createElement('select');
+      dropdown.id = 'stockSelector';
+      allStocks.forEach(ticker => {
+        const opt = document.createElement('option');
+        opt.value = ticker;
+        opt.textContent = ticker;
+        dropdown.appendChild(opt);
+      });
+      dropdown.onchange = () => loadStockChart(dropdown.value);
+      const wrapper = document.getElementById("stockDropdownSection");
+      wrapper.innerHTML = `<label><strong>Select a Stock to View Chart:</strong></label><br/>`;
+      wrapper.appendChild(dropdown);
+    }
+
+    function loadStockChart(symbol) {
+      fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1week&outputsize=52&apikey=${API_KEY}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data || !Array.isArray(data.values)) {
+            document.getElementById('stockChart').outerHTML = '<p>Chart data not available.</p>';
+            return;
+          }
+
+          const labels = data.values.map(item => item.datetime).reverse();
+          const prices = data.values.map(item => parseFloat(item.close)).reverse();
+
+          const ctx = document.getElementById('stockChart').getContext('2d');
+          if (window.stockChartObj) window.stockChartObj.destroy();
+          window.stockChartObj = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [{
+                label: `${symbol} Weekly Price`,
+                data: prices,
+                borderColor: 'green',
+                backgroundColor: 'rgba(0,255,0,0.1)',
+                fill: true,
+                tension: 0.3
+              }]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                y: {
+                  beginAtZero: false
+                }
+              }
+            }
+          });
+        })
+        .catch(() => {
+          document.getElementById('stockChart').outerHTML = '<p>Chart data not available.</p>';
+        });
+    }
+
+    function getCryptoPrices() {
+      const cryptoDiv = document.getElementById("crypto-prices");
+      cryptoDiv.innerHTML = `<h4>Cryptocurrency Prices</h4>`;
+      const ul = document.createElement('ul');
+      cryptoList.forEach(pair => {
+        fetch(`https://api.twelvedata.com/price?symbol=${pair}&apikey=${API_KEY}`)
+          .then(res => res.json())
+          .then(data => {
+            const li = document.createElement('li');
+            li.textContent = `${pair}: $${data.price}`;
+            ul.appendChild(li);
+          })
+          .catch(() => {
+            const li = document.createElement('li');
+            li.textContent = `${pair}: Error loading price`;
+            ul.appendChild(li);
+          });
+      });
+      cryptoDiv.appendChild(ul);
+    }
+
+    function goBackToDashboard() {
+      window.location.href = "dashboard.html";
+    }
+  </script>
+</body>
+</html>

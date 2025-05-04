@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Dashboard</title>
+
+    <!-- Chart.js for pie charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> 
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #1e3c72, #2a5298);
+            color: white;
+            text-align: center;
+            transition: background 0.3s, color 0.3s;
+        }
+        .container {
+            width: 50%;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            color: black;
+            transition: background 0.3s, color 0.3s;
+        }
+        input, select, button {
+            margin: 10px;
+            padding: 8px;
+            font-size: 16px;
+        }
+        #chart-container {
+            margin-top: 20px;
+        }
+        .dark-mode {
+            background: #121212;
+            color: white;
+        }
+        .dark-mode .container {
+            background: #333;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+    <button onclick="logout()" style="background-color: #add8e6; color: black;">Logout</button>
+
+    <div class="container">
+        <h2>Personal Finance Dashboard</h2>
+
+        <label for="salary">Enter Your Salary:</label>
+        <input type="number" id="salary" placeholder="Enter salary">
+
+        <h3>Expenditures</h3>
+        <div id="expenses-container"></div>
+
+        <button onclick="addExpense()">Add Expense</button>
+        <button onclick="calculateSavings()">Calculate Savings</button>
+        <button onclick="downloadPDF()">Download PDF Report</button>
+        <button onclick="goToInvestments()">Investment</button>
+        <button onclick="goToInsurance()">Insurance</button>
+
+        <h3 id="savings">Savings: ₹0</h3>
+
+        <div id="chart-container">
+            <canvas id="expenseChart"></canvas>
+        </div>
+
+        <!-- Investment Section (Hidden by default) -->
+        <div id="investment-section" style="margin-top: 20px; display: none;">
+            <h3>Investment Suggestions</h3>
+            <p id="investment-details"></p>
+        </div>
+
+        <!-- Insurance Section (Hidden by default) -->
+        <div id="insurance-section" style="margin-top: 20px; display: none;">
+            <h3>Insurance Suggestions</h3>
+            <p id="insurance-details"></p>
+        </div>
+    </div>
+
+    <script>
+        let expenses = [];
+        let chart;
+        let ctx = document.getElementById("expenseChart").getContext("2d");
+        let username = "Saif"; // Username for report
+
+        window.onload = function() {
+            const savedData = JSON.parse(sessionStorage.getItem('financeData'));
+            if (savedData) {
+                document.getElementById("salary").value = savedData.salary;
+                savedData.expenses.forEach(exp => {
+                    addExpense(exp.amount, exp.category);
+                });
+                document.getElementById("savings").innerText = `Savings: ₹${savedData.savings}`;
+                updateChart(savedData.expenseData, savedData.savings);
+            }
+            updateInvestmentAndInsuranceData();
+        };
+
+        function addExpense(amount = '', category = 'Rent') {
+            let div = document.createElement("div");
+            div.innerHTML = ` 
+                <input type='number' placeholder='Amount' class='amount' value="${amount}">
+                <select class='category'>
+                    <option value='Rent'>Rent</option>
+                    <option value='Food'>Food</option>
+                    <option value='Transport'>Transport</option>
+                    <option value='Entertainment'>Entertainment</option>
+                    <option value='Fees'>Fees</option>
+                    <option value='Bills'>Bills</option>
+                    <option value='Car Services'>Car Services</option>
+                    <option value='Others'>Others</option>
+                </select>`;
+            document.getElementById("expenses-container").appendChild(div);
+            div.querySelector('.category').value = category;
+        }
+
+        function calculateSavings() {
+            let salary = parseFloat(document.getElementById("salary").value) || 0;
+            let totalExpense = 0;
+            let expenseData = {};
+            let expenseList = [];
+
+            document.querySelectorAll(".amount").forEach((input, index) => {
+                let amount = parseFloat(input.value) || 0;
+                let category = document.querySelectorAll(".category")[index].value;
+                totalExpense += amount;
+                expenseData[category] = (expenseData[category] || 0) + amount;
+                expenseList.push({ amount, category });
+            });
+
+            let savings = salary - totalExpense;
+            document.getElementById("savings").innerText = `Savings: ₹${savings}`;
+            updateChart(expenseData, savings);
+
+            const financeData = {
+                salary: salary,
+                expenses: expenseList,
+                savings: savings,
+                expenseData: expenseData
+            };
+            sessionStorage.setItem('financeData', JSON.stringify(financeData));
+        }
+
+        function updateChart(expenseData, savings) {
+            const labels = Object.keys(expenseData).concat("Savings");
+            const values = Object.values(expenseData).concat(savings);
+            const colors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#8A2BE2", "#FFA07A", "#20B2AA", "#9370DB", "#7FFF00"];
+
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors,
+                    }]
+                }
+            });
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle("dark-mode");
+        }
+
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const today = new Date();
+            const formattedDate = `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth()+1).toString().padStart(2, '0')}-${today.getFullYear()}`;
+
+            let salary = parseFloat(document.getElementById("salary").value) || 0;
+            let totalExpense = 0;
+            let expenseDetails = [];
+
+            document.querySelectorAll(".amount").forEach((input, index) => {
+                let amount = parseFloat(input.value) || 0;
+                let category = document.querySelectorAll(".category")[index].value;
+                totalExpense += amount;
+                expenseDetails.push({ category, amount });
+            });
+
+            let savings = salary - totalExpense;
+
+            doc.setFontSize(18);
+            doc.setTextColor(255, 75, 92);
+            doc.text("Personal Finance Report", 20, 20);
+
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Report Generated for: ${username}`, 20, 30);
+            doc.text(`Report Date: ${formattedDate}`, 150, 30, { align: 'right' });
+
+            doc.setFontSize(14);
+            doc.setTextColor(54, 162, 235);
+            doc.text("Financial Overview", 20, 45);
+            doc.setDrawColor(0);
+            doc.rect(10, 40, 190, 30);
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Salary: ₹${salary}`, 20, 54);
+            doc.text(`Total Expenditure: ₹${totalExpense}`, 20, 61);
+            doc.text(`Savings: ₹${savings}`, 20, 69);
+
+            doc.setFontSize(14);
+            doc.setTextColor(54, 162, 235);
+            doc.text("Expenses Breakdown", 20, 90);
+            doc.rect(10, 85, 190, 60);
+            let y = 100;
+            expenseDetails.forEach(exp => {
+                doc.setFontSize(12);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`- ${exp.category}: ₹${exp.amount}`, 25, y);
+                y += 10;
+            });
+
+            const canvas = document.getElementById('expenseChart');
+            const imgData = canvas.toDataURL('image/png');
+            doc.addImage(imgData, 'PNG', 20, y + 10, 170, 100);
+
+            // Add Investment and Insurance details
+            let investmentDetails = document.getElementById("investment-details").innerText || "No Investment Data";
+            doc.addPage();
+            doc.text("Investment Suggestions", 20, 20);
+            doc.text(investmentDetails, 20, 30);
+
+            let insuranceDetails = document.getElementById("insurance-details").innerText || "No Insurance Data";
+            doc.text("Insurance Suggestions", 20, 50);
+            doc.text(insuranceDetails, 20, 60);
+
+            doc.setFontSize(16);
+            doc.setTextColor(255, 75, 92);
+            doc.text("Thank you for using the Personal Finance Tracker!", 20, 70);
+
+            doc.save('Financial_Report.pdf');
+        }
+
+        function goToInvestments() {
+            window.location.href = './investment.html';
+        }
+
+        function goToInsurance() {
+            window.location.href = './insurance.html';
+        }
+
+        function logout() {
+            // Clear session data if needed
+            sessionStorage.clear();
+            localStorage.clear();
+
+            // Redirect to login page
+            window.location.href = 'index.html';
+         }
+
+        function updateInvestmentAndInsuranceData() {
+            let investmentAmount = localStorage.getItem("investmentAmount");
+            let insurancePremium = localStorage.getItem("insurancePremium");
+
+            if (investmentAmount && investmentAmount != "0") {
+                document.getElementById("investment-section").style.display = "block";
+                let fdReturn = localStorage.getItem("fdReturn") || 0;
+                let rdReturn = localStorage.getItem("rdReturn") || 0;
+                let mfReturn = localStorage.getItem("mfReturn") || 0;
+
+                let investmentDetails = `
+                    Investment Amount: ₹${investmentAmount} <br>
+                    Fixed Deposit Return: ₹${fdReturn} <br>
+                    Recurring Deposit Return: ₹${rdReturn} <br>
+                    Mutual Fund Return: ₹${mfReturn} <br>
+                `;
+                document.getElementById("investment-details").innerHTML = investmentDetails;
+            }
+
+            if (insurancePremium && insurancePremium != "0") {
+                document.getElementById("insurance-section").style.display = "block";
+                let insuranceType = localStorage.getItem("insuranceType") || "No Insurance";
+
+                let insuranceDetails = `
+                    Insurance Type: ${insuranceType} <br>
+                    Estimated Premium: ₹${insurancePremium} <br>
+                `;
+                document.getElementById("insurance-details").innerHTML = insuranceDetails;
+            }
+        }
+    </script>
+</body>
+</html>
